@@ -1,0 +1,12 @@
+let timeframe = 24h;
+SigninLogs
+| where TimeGenerated > ago(timeframe)
+| where ResultType == 0
+| summarize 
+    Locations = make_set(Location),
+    IPs = make_set(IPAddress),
+    LoginCount = count()
+    by UserPrincipalName
+| where array_length(Locations) > 1
+| project UserPrincipalName, LoginCount, Locations, IPs
+| order by LoginCount desc
