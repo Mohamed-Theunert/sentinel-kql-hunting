@@ -1,1 +1,13 @@
 
+AuditLogs
+| where OperationName contains "Consent"
+   or OperationName contains "Add service principal"
+| extend AppName = tostring(TargetResources[0].displayName)
+| extend Initiator = tostring(InitiatedBy.user.userPrincipalName)
+| project
+    TimeGenerated,
+    Initiator,
+    OperationName,
+    AppName,
+    TargetResources
+| order by TimeGenerated desc
