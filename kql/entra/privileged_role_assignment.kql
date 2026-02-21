@@ -1,1 +1,6 @@
 
+AuditLogs
+| where OperationName contains "Add member to role"
+| extend Role = tostring(TargetResources[0].displayName)
+| project TimeGenerated, InitiatedBy, Role, TargetResources
+| order by TimeGenerated desc
