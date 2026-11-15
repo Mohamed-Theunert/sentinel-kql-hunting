@@ -1,0 +1,23 @@
+// Detection: RDP logon to a domain controller
+// Severity: High
+// Data source: SecurityEvent
+// Event ID: 4624
+// Logon type: 10 (RemoteInteractive)
+// MITRE ATT&CK: T1021.001 - Remote Services: Remote Desktop Protocol
+//
+// Replace the example DC naming logic with a watchlist or authoritative
+// domain controller inventory in production.
+
+SecurityEvent
+| where TimeGenerated > ago(1h)
+| where EventID == 4624
+| where LogonType == 10
+| where Computer startswith "DC"
+| project
+    TimeGenerated,
+    Computer,
+    Account,
+    IpAddress,
+    LogonType,
+    Activity
+| order by TimeGenerated desc
