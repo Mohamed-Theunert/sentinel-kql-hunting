@@ -1,0 +1,8 @@
+GroupName,Severity,Description
+Domain Admins,High,Full administrative control of the domain
+Enterprise Admins,Critical,Forest-wide administrative privileges
+Administrators,High,Built-in administrative group
+Schema Admins,Critical,Can modify the Active Directory schema
+Account Operators,Medium,Can manage many user and group objects
+Backup Operators,Medium,Can bypass file permissions for backup and restore
+Server Operators,Medium,Can administer domain controller services
