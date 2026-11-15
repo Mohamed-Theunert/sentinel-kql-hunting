@@ -1,12 +1,56 @@
+// Possible Impossible Travel - heuristic hunting query
+// Platform: Microsoft Sentinel / SigninLogs
+//
+// IMPORTANT:
+// This query is a hunting approximation based on sign-in geolocation and time.
+// It is NOT equivalent to Microsoft's built-in Impossible Travel risk detection,
+// which uses additional Microsoft signals and behavioral analytics.
+//
+// Tune thresholds to your environment and account for VPNs, proxies,
+// mobile carriers, and cloud egress locations.
+
 let timeframe = 24h;
+let minimum_distance_km = 500.0;
+let suspicious_speed_kmh = 900.0;
 SigninLogs
 | where TimeGenerated > ago(timeframe)
 | where ResultType == 0
-| summarize 
-    Locations = make_set(Location),
-    IPs = make_set(IPAddress),
-    LoginCount = count()
-    by UserPrincipalName
-| where array_length(Locations) > 1
-| project UserPrincipalName, LoginCount, Locations, IPs
-| order by LoginCount desc
+| extend
+    Latitude = todouble(LocationDetails.geoCoordinates.latitude),
+    Longitude = todouble(LocationDetails.geoCoordinates.longitude),
+    City = tostring(LocationDetails.city),
+    Country = tostring(LocationDetails.countryOrRegion)
+| where isnotnull(Latitude) and isnotnull(Longitude)
+| project TimeGenerated, UserPrincipalName, IPAddress, City, Country, Latitude, Longitude
+| sort by UserPrincipalName asc, TimeGenerated asc
+| serialize
+| extend
+    PrevUser = prev(UserPrincipalName),
+    PrevTime = prev(TimeGenerated),
+    PrevLatitude = prev(Latitude),
+    PrevLongitude = prev(Longitude),
+    PrevCity = prev(City),
+    PrevCountry = prev(Country),
+    PrevIP = prev(IPAddress)
+| where UserPrincipalName == PrevUser
+| extend
+    DistanceKm = geo_distance_2points(Longitude, Latitude, PrevLongitude, PrevLatitude) / 1000.0,
+    TimeHours = datetime_diff("second", TimeGenerated, PrevTime) / 3600.0
+| where TimeHours > 0
+| extend RequiredSpeedKmh = DistanceKm / TimeHours
+| where DistanceKm >= minimum_distance_km
+| where RequiredSpeedKmh >= suspicious_speed_kmh
+| project
+    UserPrincipalName,
+    PrevTime,
+    TimeGenerated,
+    PrevCountry,
+    PrevCity,
+    Country,
+    City,
+    PrevIP,
+    IPAddress,
+    DistanceKm = round(DistanceKm, 1),
+    TimeHours = round(TimeHours, 2),
+    RequiredSpeedKmh = round(RequiredSpeedKmh, 1)
+| order by RequiredSpeedKmh desc
