@@ -1,0 +1,27 @@
+// Detection: Privileged group membership added
+// Severity: High
+// Data source: SecurityEvent
+// Event IDs: 4728, 4732, 4756
+// MITRE ATT&CK: T1098 - Account Manipulation
+//
+// Tune the privileged group list for your environment.
+
+let PrivilegedGroups = dynamic([
+    "Domain Admins",
+    "Enterprise Admins",
+    "Administrators",
+    "Schema Admins"
+]);
+SecurityEvent
+| where TimeGenerated > ago(1h)
+| where EventID in (4728, 4732, 4756)
+| where TargetUserName in~ (PrivilegedGroups)
+| project
+    TimeGenerated,
+    Computer,
+    EventID,
+    SubjectAccount,
+    TargetUserName,
+    MemberName,
+    Activity
+| order by TimeGenerated desc
