@@ -1,0 +1,19 @@
+// Detection: New Active Directory user account created
+// Severity: Medium
+// Data source: SecurityEvent
+// Event ID: 4720
+// MITRE ATT&CK: T1136.002 - Create Account: Domain Account
+//
+// Account creation is often legitimate. Use this as a baseline/hunting query
+// or combine it with privileged group assignment for higher confidence.
+
+SecurityEvent
+| where TimeGenerated > ago(1h)
+| where EventID == 4720
+| project
+    TimeGenerated,
+    Computer,
+    SubjectAccount,
+    TargetAccount,
+    Activity
+| order by TimeGenerated desc
