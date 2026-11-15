@@ -1,0 +1,29 @@
+// Detection: Sensitive Active Directory attribute modified
+// Severity: High
+// Data source: SecurityEvent
+// Event ID: 5136
+// MITRE ATT&CK: T1098 - Account Manipulation
+//
+// Event 5136 parsing can vary depending on connector/schema.
+// Validate the available fields in your workspace before production use.
+
+let SensitiveAttributes = dynamic([
+    "servicePrincipalName",
+    "scriptPath",
+    "userAccountControl",
+    "member",
+    "adminCount",
+    "msDS-SupportedEncryptionTypes"
+]);
+SecurityEvent
+| where TimeGenerated > ago(1h)
+| where EventID == 5136
+| where EventData has_any (SensitiveAttributes)
+| project
+    TimeGenerated,
+    Computer,
+    SubjectAccount,
+    EventID,
+    EventData,
+    Activity
+| order by TimeGenerated desc
